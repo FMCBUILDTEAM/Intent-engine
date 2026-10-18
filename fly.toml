@@ -1,4 +1,4 @@
-app = "intent-engine"
+app = "fmc-intent-engine"
 primary_region = "lhr"
 
 [build]
