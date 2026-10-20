@@ -1,5 +1,5 @@
 /* Intent Engine landing page: two three.js scenes.
-   Hero: a rotating globe of readers, with a few red high-intent readers.
+   Hero: a rotating tooth of readers, with a few red high-intent readers.
    How it works: a funnel where readers pass through Reads, Compares, Asks and Buys. */
 (function () {
   'use strict';
@@ -59,12 +59,41 @@
     camera.position.set(0, 0, 7.2);
     var group = new THREE.Group();
     scene.add(group);
-    var N = 1600, R = 2.1, golden = Math.PI * (3 - Math.sqrt(5));
-    var grey = [], red = [];
+    var golden = Math.PI * (3 - Math.sqrt(5));
+    var grey = [], red = [], count = 0;
+    function point(x, y, z) {
+      var target = count++ % 67 === 11 ? red : grey;
+      target.push(x, y, z);
+    }
+    // A rounded, four-cusp crown. Evenly distributed surface points retain
+    // the light editorial dot treatment without loading a model or texture.
+    var N = 1000;
     for (var i = 0; i < N; i++) {
-      var y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = golden * i;
-      var px = Math.cos(th) * r * R, py = y * R, pz = Math.sin(th) * r * R;
-      if (i % 67 === 11) red.push(px, py, pz); else grey.push(px, py, pz);
+      var v = 1 - 2 * (i + 0.5) / N;
+      var theta = golden * i, ring = Math.pow(1 - v * v, 0.36);
+      var cx = Math.cos(theta), cz = Math.sin(theta);
+      var x = 1.32 * ring * Math.sign(cx) * Math.pow(Math.abs(cx), 0.78);
+      var z = 0.88 * ring * Math.sign(cz) * Math.pow(Math.abs(cz), 0.78);
+      var y = 0.65 + 1.02 * v;
+      // Four raised cusps and a shallow central chewing-surface depression.
+      y += Math.max(v, 0) * ring * (0.25 - 0.19 * Math.cos(4 * theta));
+      point(x, y, z);
+    }
+    // Two curved, tapering roots, embedded in the crown at their shoulders.
+    // Omit the hidden inner surfaces where the roots join the crown.
+    for (var side = -1; side <= 1; side += 2) {
+      for (var j = 0; j < 420; j++) {
+        var t = (j + 0.5) / 420, angle = golden * j;
+        var radius = 0.50 * Math.pow(1 - t, 0.72);
+        var rx = side * (0.55 + 0.42 * t - 0.15 * Math.sin(Math.PI * t));
+        var ry = 0.10 - 2.15 * t;
+        var rz = 0.10 * Math.sin(Math.PI * t);
+        x = rx + radius * Math.cos(angle);
+        y = ry;
+        z = rz + radius * 0.85 * Math.sin(angle);
+        if (y > -0.25) continue;
+        point(x, y, z);
+      }
     }
     function make(arr, color, sz, op) {
       var g = new THREE.BufferGeometry();
@@ -76,19 +105,21 @@
     }
     make(grey, 0x9CA3AF, 0.04, 0.85);
     var redPts = make(red, 0xE00623, 0.1, 1);
-    group.rotation.x = 0.35;
+    group.scale.setScalar(0.62);
+    group.rotation.x = 0.12;
+    group.rotation.y = 0.25;
     return {
       scene: scene, camera: camera,
       resize: function (w, h) {
         camera.aspect = w / h; camera.updateProjectionMatrix();
         var wide = w / h > 0.9;
-        group.position.set(wide ? 0.6 : 0, wide ? 0.55 : 0.9, 0);
+        group.position.set(wide ? 0.6 : 0, 1.5, 0);
       },
       tick: function (dt, t) {
         group.rotation.y += dt * 0.12;
         redPts.material.size = 0.09 + Math.sin(t * 2.2) * 0.025;
       },
-      settle: function () { group.rotation.y = 0.6; }
+      settle: function () { group.rotation.y = 0.25; }
     };
   }
 
